@@ -80,7 +80,7 @@ def generate_map(motor_load, motor_eff, controller_eff):
 # ---------------- UI ----------------
 st.set_page_config(page_title="Thermal Calculator", layout="centered")
 
-st.title("Motor Thermal Calculator")
+st.title("GPM50 Separate Controller Heatsink Thermal Calculator")
 
 st.subheader("Input Parameters")
 
