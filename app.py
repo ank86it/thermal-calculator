@@ -55,7 +55,7 @@ def thermal_model(motor_load, motor_eff, controller_eff, ambient_temp, fin_facto
 def generate_map(motor_load, motor_eff, controller_eff):
 
     ambient_range = [25, 30, 35, 40, 50]
-    fin_range = [-20, -10, 0, 10, 20]
+    fin_range = [-30, -20, -10, 0, 10, 20, 30]
 
     results = []
 
