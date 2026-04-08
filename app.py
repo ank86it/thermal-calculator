@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
 # ---------------- INTERPOLATION ----------------
 def interpolate_h(v, v_points, h_points):
@@ -43,7 +44,7 @@ def thermal_model(motor_load, motor_eff, controller_eff, ambient_temp, fin_facto
     # ---- TOTAL AREA ----
     A_total = A_bc + A_fin_new
 
-    # ---- EFFECTIVE h (AREA WEIGHTED) ----
+    # ---- EFFECTIVE h ----
     h_effective = (h_bc * A_bc + h_bf * A_fin_new) / A_total
 
     # ---- HEATSINK Rth ----
@@ -58,13 +59,9 @@ def thermal_model(motor_load, motor_eff, controller_eff, ambient_temp, fin_facto
 
     R_jc = 0.38
 
-    # ---- CASE TEMPERATURE ----
+    # ---- TEMPERATURE ----
     T_case = ambient_temp + mosfet_loss * R_total
-
-    # ---- DEVICE DISTRIBUTION ----
     N_devices = 24
-
-    # ---- JUNCTION TEMPERATURE ----
     T_j = T_case + (mosfet_loss / N_devices) * R_jc
 
     return T_j
@@ -106,23 +103,15 @@ st.subheader("Input Parameters")
 
 motor_load = st.number_input("Motor Load (W)", value=6000.0)
 
-motor_eff = st.number_input(
-    "Motor Efficiency",
-    value=0.9000,
-    format="%.4f"
-)
+motor_eff = st.number_input("Motor Efficiency", value=0.9000, format="%.4f")
 
-controller_eff = st.number_input(
-    "Controller Efficiency",
-    value=0.9767,
-    format="%.4f"
-)
+controller_eff = st.number_input("Controller Efficiency", value=0.9767, format="%.4f")
 
 ambient_temp = st.number_input("Ambient Temperature (°C)", value=40.0)
 
 fin_area_factor = st.number_input("Fin Area Change (%)", value=0.0)
 
-# ✅ FINAL AIR VELOCITY INPUT (LIKE OTHER FIELDS)
+# ✅ Air velocity as typed input
 air_velocity = st.number_input(
     "Air Velocity (m/s)",
     value=5.0,
@@ -170,7 +159,27 @@ amb, fin, data = generate_map(
 df = pd.DataFrame(data, index=amb, columns=fin)
 
 fig, ax = plt.subplots()
-cax = ax.imshow(df, aspect='auto')
+
+# ---- COLOR ZONE FUNCTION ----
+def get_color(value):
+    if value > 20:
+        return 2   # green
+    elif value > 10:
+        return 1   # yellow
+    else:
+        return 0   # red
+
+# ---- CREATE COLOR MATRIX ----
+color_matrix = df.copy()
+
+for i in range(len(df.index)):
+    for j in range(len(df.columns)):
+        color_matrix.iloc[i, j] = get_color(df.iloc[i, j])
+
+# ---- APPLY EXCEL STYLE COLORS ----
+cmap = ListedColormap(["red", "yellow", "green"])
+
+ax.imshow(color_matrix, cmap=cmap, aspect='auto')
 
 ax.set_xticks(range(len(fin)))
 ax.set_yticks(range(len(amb)))
@@ -181,11 +190,9 @@ ax.set_yticklabels(amb)
 ax.set_xlabel("Fin Area Change (%)")
 ax.set_ylabel("Ambient Temp (°C)")
 
-# Show values in heatmap
+# ---- SHOW VALUES ----
 for i in range(len(amb)):
     for j in range(len(fin)):
         ax.text(j, i, f"{df.iloc[i,j]}%", ha='center', va='center')
-
-fig.colorbar(cax)
 
 st.pyplot(fig)
