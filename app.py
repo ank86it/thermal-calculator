@@ -54,7 +54,7 @@ def thermal_model(motor_load, motor_eff, controller_eff, ambient_temp, fin_facto
 
     return T_j
 
-# ---------------- MAP GENERATION ----------------
+# ---------------- MAP ----------------
 def generate_map(motor_load, motor_eff, controller_eff, air_velocity):
 
     ambient_range = [25, 30, 35, 40, 50]
@@ -102,7 +102,7 @@ air_velocity = st.number_input(
     format="%.2f"
 )
 
-# ---------------- CALCULATION ----------------
+# ---------------- CALC ----------------
 if st.button("Calculate"):
 
     tj = thermal_model(
@@ -118,21 +118,21 @@ if st.button("Calculate"):
 
     st.subheader("Results")
 
-    # ✅ NEW MARGIN-BASED STATUS
+    # ✅ FINAL ICON-BASED STATUS
     if margin < 10:
-        st.error(f"❌ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (RISK)")
+        st.error(f"❌ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (POOR DESIGN)")
     elif margin < 20:
-        st.warning(f"⚠️ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (SAFE DESIGN)")
+        st.success(f"✅ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (SAFE DESIGN)")
     else:
-        st.success(f"✅ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (OVER DESIGN)")
+        st.warning(f"⚠️ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (OVER DESIGN)")
 
-    # ✅ MARGIN COLOR MATCHING
+    # Margin display
     if margin < 10:
         st.error(f"Thermal Margin: {round(margin,2)} %")
     elif margin < 20:
-        st.warning(f"Thermal Margin: {round(margin,2)} %")
-    else:
         st.success(f"Thermal Margin: {round(margin,2)} %")
+    else:
+        st.warning(f"Thermal Margin: {round(margin,2)} %")
 
 # ---------------- HEATMAP ----------------
 st.subheader("Thermal Design Heatmap")
@@ -150,11 +150,11 @@ fig, ax = plt.subplots()
 
 def get_color(value):
     if value > 20:
-        return 2   # Green → Over Design
+        return 2
     elif value > 10:
-        return 1   # Light Green → Safe Design
+        return 1
     else:
-        return 0   # Red → Poor Design
+        return 0
 
 color_matrix = df.copy()
 
@@ -181,7 +181,7 @@ for i in range(len(amb)):
 
 st.pyplot(fig)
 
-# ---------------- EXCEL STYLE LEGEND ----------------
+# ---------------- LEGEND ----------------
 st.markdown(
     """
     <div style="width:300px; font-weight:bold; border:1px solid black;">
