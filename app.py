@@ -54,7 +54,7 @@ def thermal_model(motor_load, motor_eff, controller_eff, ambient_temp, fin_facto
 
     return T_j
 
-# ---------------- MAP ----------------
+# ---------------- MAP GENERATION ----------------
 def generate_map(motor_load, motor_eff, controller_eff, air_velocity):
 
     ambient_range = [25, 30, 35, 40, 50]
@@ -102,7 +102,7 @@ air_velocity = st.number_input(
     format="%.2f"
 )
 
-# ---------------- CALC ----------------
+# ---------------- CALCULATION ----------------
 if st.button("Calculate"):
 
     tj = thermal_model(
@@ -118,12 +118,21 @@ if st.button("Calculate"):
 
     st.subheader("Results")
 
-    if tj > 125:
-        st.error(f"❌ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (OVERHEATING)")
+    # ✅ NEW MARGIN-BASED STATUS
+    if margin < 10:
+        st.error(f"❌ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (RISK)")
+    elif margin < 20:
+        st.warning(f"⚠️ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (SAFE DESIGN)")
     else:
-        st.success(f"✅ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (SAFE)")
+        st.success(f"✅ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (OVER DESIGN)")
 
-    st.info(f"Thermal Margin: {round(margin,2)} %")
+    # ✅ MARGIN COLOR MATCHING
+    if margin < 10:
+        st.error(f"Thermal Margin: {round(margin,2)} %")
+    elif margin < 20:
+        st.warning(f"Thermal Margin: {round(margin,2)} %")
+    else:
+        st.success(f"Thermal Margin: {round(margin,2)} %")
 
 # ---------------- HEATMAP ----------------
 st.subheader("Thermal Design Heatmap")
