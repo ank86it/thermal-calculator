@@ -118,7 +118,6 @@ if st.button("Calculate"):
 
     st.subheader("Results")
 
-    # ✅ FINAL ICON-BASED STATUS
     if margin < 10:
         st.error(f"❌ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (POOR DESIGN)")
     elif margin < 20:
@@ -126,7 +125,6 @@ if st.button("Calculate"):
     else:
         st.warning(f"⚠️ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (OVER DESIGN)")
 
-    # Margin display
     if margin < 10:
         st.error(f"Thermal Margin: {round(margin,2)} %")
     elif margin < 20:
@@ -198,3 +196,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+# ---------------- HEATSINK IMAGE ----------------
+st.markdown("### Heatsink Geometry (Reference Design)")
+st.image("Controller Heatsink1.png", use_container_width=True)
