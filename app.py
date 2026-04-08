@@ -199,4 +199,4 @@ st.markdown(
 
 # ---------------- HEATSINK IMAGE ----------------
 st.markdown("### Heatsink Geometry (Reference Design)")
-st.image("Controller Heatsink1.png", use_container_width=True)
+st.image("Controller Heatsink2.png", use_container_width=True)
