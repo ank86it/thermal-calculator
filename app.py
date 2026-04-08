@@ -19,37 +19,27 @@ def interpolate_h(v, v_points, h_points):
 # ---------------- MODEL ----------------
 def thermal_model(motor_load, motor_eff, controller_eff, ambient_temp, fin_factor, air_velocity):
     
-    # ---- LOSS CALCULATION ----
     motor_input = motor_load / motor_eff
     controller_input = motor_input / controller_eff
     mosfet_loss = controller_input - motor_input
 
-    # ---- AREA VALUES ----
-    A_bc = 0.0386   # no fin area (m²)
-    A_bf = 0.0573   # fin area (m²)
+    A_bc = 0.0386
+    A_bf = 0.0573
 
-    # ---- AIRFLOW DATA ----
     v_points = [2, 5, 10]
     h_fin_points = [11, 18, 23]
     h_no_fin_points = [13, 18, 21]
 
-    # ---- INTERPOLATION ----
     h_bf = interpolate_h(air_velocity, v_points, h_fin_points)
     h_bc = interpolate_h(air_velocity, v_points, h_no_fin_points)
 
-    # ---- FIN EFFECT ----
     A_fin_new = A_bf * (1 + fin_factor / 100)
-
-    # ---- TOTAL AREA ----
     A_total = A_bc + A_fin_new
 
-    # ---- EFFECTIVE h ----
     h_effective = (h_bc * A_bc + h_bf * A_fin_new) / A_total
 
-    # ---- HEATSINK Rth ----
     R_hs = 1 / (h_effective * A_total)
 
-    # ---- OTHER Rth ----
     R_pad = 0.064
     R_RearCoverCooling = -0.043
     R_correction = -0.17
@@ -58,14 +48,13 @@ def thermal_model(motor_load, motor_eff, controller_eff, ambient_temp, fin_facto
 
     R_jc = 0.38
 
-    # ---- TEMPERATURE ----
     T_case = ambient_temp + mosfet_loss * R_total
     N_devices = 24
     T_j = T_case + (mosfet_loss / N_devices) * R_jc
 
     return T_j
 
-# ---------------- MAP GENERATION ----------------
+# ---------------- MAP ----------------
 def generate_map(motor_load, motor_eff, controller_eff, air_velocity):
 
     ambient_range = [25, 30, 35, 40, 50]
@@ -99,16 +88,11 @@ st.title("GPM50 Separate Controller Heatsink Thermal Calculator")
 st.subheader("Input Parameters")
 
 motor_load = st.number_input("Motor Load (W)", value=6000.0)
-
 motor_eff = st.number_input("Motor Efficiency", value=0.9000, format="%.4f")
-
 controller_eff = st.number_input("Controller Efficiency", value=0.9767, format="%.4f")
-
 ambient_temp = st.number_input("Ambient Temperature (°C)", value=40.0)
-
 fin_area_factor = st.number_input("Fin Area Change (%)", value=0.0)
 
-# ---- AIR VELOCITY INPUT ----
 air_velocity = st.number_input(
     "Air Velocity (m/s)",
     value=5.0,
@@ -118,7 +102,7 @@ air_velocity = st.number_input(
     format="%.2f"
 )
 
-# ---------------- CALCULATION ----------------
+# ---------------- CALC ----------------
 if st.button("Calculate"):
 
     tj = thermal_model(
@@ -155,23 +139,20 @@ df = pd.DataFrame(data, index=amb, columns=fin)
 
 fig, ax = plt.subplots()
 
-# ---- COLOR FUNCTION ----
 def get_color(value):
     if value > 20:
         return 2   # Green → Over Design
     elif value > 10:
         return 1   # Light Green → Safe Design
     else:
-        return 0   # Red → Risk
+        return 0   # Red → Poor Design
 
-# ---- COLOR MATRIX ----
 color_matrix = df.copy()
 
 for i in range(len(df.index)):
     for j in range(len(df.columns)):
         color_matrix.iloc[i, j] = get_color(df.iloc[i, j])
 
-# ---- COLOR MAP ----
 cmap = ListedColormap(["red", "lightgreen", "green"])
 
 ax.imshow(color_matrix, cmap=cmap, aspect='auto')
@@ -185,19 +166,26 @@ ax.set_yticklabels(amb)
 ax.set_xlabel("Fin Area Change (%)")
 ax.set_ylabel("Ambient Temp (°C)")
 
-# ---- VALUES ----
 for i in range(len(amb)):
     for j in range(len(fin)):
         ax.text(j, i, f"{df.iloc[i,j]}%", ha='center', va='center')
 
 st.pyplot(fig)
 
-# ---- LEGEND ----
+# ---------------- EXCEL STYLE LEGEND ----------------
 st.markdown(
     """
-    **Color Code:**
-    - 🟢 Green → Over Design  
-    - 🟩 Light Green → Safe Design  
-    - 🔴 Red → Risk  
-    """
+    <div style="width:300px; font-weight:bold; border:1px solid black;">
+        <div style="background-color:green; color:white; padding:8px;">
+            Over Design
+        </div>
+        <div style="background-color:lightgreen; color:black; padding:8px;">
+            Safe Design
+        </div>
+        <div style="background-color:red; color:white; padding:8px;">
+            Poor Design
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
