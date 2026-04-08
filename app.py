@@ -19,14 +19,14 @@ def interpolate_h(v, v_points, h_points):
 # ---------------- MODEL ----------------
 def thermal_model(motor_load, motor_eff, controller_eff, ambient_temp, fin_factor, air_velocity):
     
-    # ---- LOSS ----
+    # ---- LOSS CALCULATION ----
     motor_input = motor_load / motor_eff
     controller_input = motor_input / controller_eff
     mosfet_loss = controller_input - motor_input
 
-    # ---- AREA ----
-    A_bc = 0.0386
-    A_bf = 0.0573
+    # ---- AREA VALUES ----
+    A_bc = 0.0386   # no fin area (m²)
+    A_bf = 0.0573   # fin area (m²)
 
     # ---- AIRFLOW DATA ----
     v_points = [2, 5, 10]
@@ -39,14 +39,17 @@ def thermal_model(motor_load, motor_eff, controller_eff, ambient_temp, fin_facto
 
     # ---- FIN EFFECT ----
     A_fin_new = A_bf * (1 + fin_factor / 100)
+
+    # ---- TOTAL AREA ----
     A_total = A_bc + A_fin_new
 
-    # ---- EFFECTIVE h ----
+    # ---- EFFECTIVE h (AREA WEIGHTED) ----
     h_effective = (h_bc * A_bc + h_bf * A_fin_new) / A_total
 
-    # ---- Rth ----
+    # ---- HEATSINK Rth ----
     R_hs = 1 / (h_effective * A_total)
 
+    # ---- OTHER Rth ----
     R_pad = 0.064
     R_RearCoverCooling = -0.043
     R_correction = -0.17
@@ -55,15 +58,19 @@ def thermal_model(motor_load, motor_eff, controller_eff, ambient_temp, fin_facto
 
     R_jc = 0.38
 
-    # ---- TEMP ----
+    # ---- CASE TEMPERATURE ----
     T_case = ambient_temp + mosfet_loss * R_total
+
+    # ---- DEVICE DISTRIBUTION ----
     N_devices = 24
+
+    # ---- JUNCTION TEMPERATURE ----
     T_j = T_case + (mosfet_loss / N_devices) * R_jc
 
     return T_j
 
 
-# ---------------- MAP ----------------
+# ---------------- MAP GENERATION ----------------
 def generate_map(motor_load, motor_eff, controller_eff, air_velocity):
 
     ambient_range = [25, 30, 35, 40, 50]
@@ -93,23 +100,32 @@ def generate_map(motor_load, motor_eff, controller_eff, air_velocity):
 # ---------------- UI ----------------
 st.set_page_config(page_title="Thermal Calculator", layout="centered")
 
-st.title("Motor Thermal Calculator")
+st.title("GPM50 Separate Controller Heatsink Thermal Calculator")
 
 st.subheader("Input Parameters")
 
 motor_load = st.number_input("Motor Load (W)", value=6000.0)
 
-motor_eff = st.number_input("Motor Efficiency", value=0.9000, format="%.4f")
+motor_eff = st.number_input(
+    "Motor Efficiency",
+    value=0.9000,
+    format="%.4f"
+)
 
-controller_eff = st.number_input("Controller Efficiency", value=0.9767, format="%.4f")
+controller_eff = st.number_input(
+    "Controller Efficiency",
+    value=0.9767,
+    format="%.4f"
+)
 
 ambient_temp = st.number_input("Ambient Temperature (°C)", value=40.0)
 
 fin_area_factor = st.number_input("Fin Area Change (%)", value=0.0)
 
-air_velocity = st.number_input("Air Velocity (m/s)", value=5.0)
+# ✅ AIR VELOCITY INPUT (NEW)
+air_velocity = st.slider("Air Velocity (m/s)", 2.0, 10.0, 5.0)
 
-# ---------------- CALC ----------------
+# ---------------- CALCULATION ----------------
 if st.button("Calculate"):
 
     tj = thermal_model(
@@ -121,16 +137,17 @@ if st.button("Calculate"):
         air_velocity
     )
 
-    margin = ((125 - tj) / 125) * 100
+    Tj_limit = 125.0
+    margin_percent = ((Tj_limit - tj) / Tj_limit) * 100
 
     st.subheader("Results")
 
-    if tj > 125:
-        st.error(f"❌ Tj: {round(tj,2)} °C (OVERHEATING)")
+    if tj > Tj_limit:
+        st.error(f"❌ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (OVERHEATING)")
     else:
-        st.success(f"✅ Tj: {round(tj,2)} °C (SAFE)")
+        st.success(f"✅ MOSFET Junction Temperature (Tj): {round(tj,2)} °C (SAFE)")
 
-    st.info(f"Thermal Margin: {round(margin,2)} %")
+    st.info(f"Thermal Margin: {round(margin_percent,2)} %")
 
 
 # ---------------- HEATMAP ----------------
@@ -157,6 +174,7 @@ ax.set_yticklabels(amb)
 ax.set_xlabel("Fin Area Change (%)")
 ax.set_ylabel("Ambient Temp (°C)")
 
+# Show values
 for i in range(len(amb)):
     for j in range(len(fin)):
         ax.text(j, i, f"{df.iloc[i,j]}%", ha='center', va='center')
