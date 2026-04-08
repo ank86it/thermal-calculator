@@ -122,8 +122,15 @@ ambient_temp = st.number_input("Ambient Temperature (°C)", value=40.0)
 
 fin_area_factor = st.number_input("Fin Area Change (%)", value=0.0)
 
-# ✅ AIR VELOCITY INPUT (NEW)
-air_velocity = st.slider("Air Velocity (m/s)", 2.0, 10.0, 5.0)
+# ✅ FINAL AIR VELOCITY INPUT (LIKE OTHER FIELDS)
+air_velocity = st.number_input(
+    "Air Velocity (m/s)",
+    value=5.0,
+    min_value=2.0,
+    max_value=10.0,
+    step=0.1,
+    format="%.2f"
+)
 
 # ---------------- CALCULATION ----------------
 if st.button("Calculate"):
@@ -174,7 +181,7 @@ ax.set_yticklabels(amb)
 ax.set_xlabel("Fin Area Change (%)")
 ax.set_ylabel("Ambient Temp (°C)")
 
-# Show values
+# Show values in heatmap
 for i in range(len(amb)):
     for j in range(len(fin)):
         ax.text(j, i, f"{df.iloc[i,j]}%", ha='center', va='center')
