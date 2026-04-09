@@ -3,6 +3,24 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
+# ---------------- HIDE STREAMLIT HEADER ----------------
+st.markdown(
+    """
+    <style>
+    header[data-testid="stHeader"] {
+        visibility: hidden;
+    }
+    [data-testid="stToolbar"] {
+        display: none;
+    }
+    .block-container {
+        padding-top: 1rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # ---------------- INTERPOLATION ----------------
 def interpolate_h(v, v_points, h_points):
     if v <= v_points[0]:
